@@ -23,14 +23,12 @@ pathlib.Path("./stickers").mkdir(parents=True, exist_ok=True)
 
 
 @app.post("/")
-async def convert(file: UploadFile, response: Response):
+async def convert(file: UploadFile):
     content = await file.read()
     file_hash = hashlib.sha256(content).hexdigest()
 
-    response.headers["X-File-Hash"] = file_hash
-
     if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
-        return FileResponse(f"./stickers/{file_hash}.gif")
+        return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
 
     with tempfile.TemporaryDirectory() as file_dir:
         file_name = f"{file_dir}/sticker.tgs"
@@ -47,7 +45,7 @@ async def convert(file: UploadFile, response: Response):
             with open(f"./stickers/{file_hash}.gif", "wb") as output:
                 output.write(buffer.read())
 
-            return FileResponse(f"./stickers/{file_hash}.gif")
+            return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
 
 
 @app.get("/{file_hash}")
