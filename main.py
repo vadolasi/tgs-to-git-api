@@ -37,7 +37,6 @@ async def shutdown():
 
 @app.post("/")
 async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = Form(False)):
-    print("Teste")
     sticker = await db.sticker.find_unique(
         where={
             "id": sticker_id
