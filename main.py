@@ -1,13 +1,11 @@
 import hashlib
 import pathlib
 import tempfile
-from io import BytesIO
 
 import docker
 from fastapi import FastAPI, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from PIL import Image
 from prisma import Prisma, Base64
 
 client = docker.from_env()
@@ -63,13 +61,7 @@ async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = F
             )
 
         with open(f"{file_dir}/sticker.tgs.gif", "rb") as buffer:
-            io = BytesIO(buffer.read())
-            image = Image.open(io)
-            image.save(io, format="GIF", optimize=True)
-            io.seek(0)
-
-            gif = io.getvalue()
-
+            gif = buffer.read()
             await db.sticker.create(
                 data={
                     "id": sticker_id,
