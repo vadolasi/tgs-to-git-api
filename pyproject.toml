@@ -4,7 +4,6 @@ version = "0.1.0"
 description = ""
 authors = ["Vitor Daniel <vitor036daniel@gmail.com>"]
 readme = "README.md"
-packages = [{include = "telegram_to_git"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -14,7 +13,7 @@ uvicorn = {extras = ["standard"], version = "^0.20.0"}
 gunicorn = "^20.1.0"
 python-multipart = "^0.0.5"
 pillow = "^9.4.0"
-
+prisma = "^0.8.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.12.0"

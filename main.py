@@ -1,15 +1,18 @@
 import hashlib
 import pathlib
 import tempfile
+from io import BytesIO
 
 import docker
-from fastapi import FastAPI, Form, UploadFile, HTTPException
-from PIL import Image
-from io import BytesIO
+from fastapi import FastAPI, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
+from PIL import Image
+from prisma import Prisma, Base64
 
 client = docker.from_env()
+
+db = Prisma()
 
 app = FastAPI()
 
@@ -24,21 +27,35 @@ app.add_middleware(
 pathlib.Path("./stickers").mkdir(parents=True, exist_ok=True)
 
 
+@app.on_event("startup")
+async def startup():
+    await db.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await db.disconnect()
+
+
 @app.post("/")
 async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = Form(False)):
+    sticker = await db.sticker.find_unique(
+        where={
+            "id": sticker_id
+        }
+    )
+
+    if sticker:
+        return Response(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
+
     content = await file.read()
     file_hash = hashlib.sha256(content).hexdigest()
-
-    if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
-        return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
 
     with tempfile.TemporaryDirectory() as file_dir:
         file_name = f"{file_dir}/sticker.tgs"
 
         with open(file_name, "wb") as buffer:
-            io = BytesIO(content)
-            image = Image.open(io)
-            image.save(buffer, "tgs", optimize=True, quality=100 if compress else 50)
+            buffer.write(content)
 
             client.containers.run(
                 "edasriyan/tgs-to-gif",
@@ -46,18 +63,33 @@ async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = F
             )
 
         with open(f"{file_dir}/sticker.tgs.gif", "rb") as buffer:
-            with open(f"./stickers/{file_hash}.gif", "wb") as output:
-                output.write(buffer.read())
+            io = BytesIO(buffer.read())
+            image = Image.open(io)
+            image.save(io, format="GIF", optimize=True)
+            io.seek(0)
 
-            if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
-                return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
+            gif = io.getvalue()
 
-        raise HTTPException(status_code=404, detail="Item not found")
+            await db.sticker.create(
+                data={
+                    "id": sticker_id,
+                    "file": Base64.encode(gif),
+                    "hash": file_hash
+                }
+            )
+
+            return Response(gif, headers={"X-File-Hash": file_hash}, media_type="image/gif")
 
 
-@app.get("/{file_hash}")
-async def get_sticker(file_hash: str):
-    if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
-        return FileResponse(f"./stickers/{file_hash}.gif")
+@app.get("/{sticker_id}")
+async def get_sticker(sticker_id: str):
+    sticker = await db.sticker.find_unique(
+        where={
+            "id": sticker_id
+        }
+    )
+
+    if sticker:
+        return Response(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
 
     raise HTTPException(status_code=404, detail="Item not found")

@@ -1,2 +1,4 @@
 __pycache__/
 stickers/
+*.db*
+.env
