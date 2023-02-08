@@ -3,7 +3,7 @@ import pathlib
 import tempfile
 
 import docker
-from fastapi import FastAPI, Response, UploadFile
+from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -28,7 +28,10 @@ async def convert(file: UploadFile):
     file_hash = hashlib.sha256(content).hexdigest()
 
     if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
-        return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
+        if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
+            return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
+
+        raise HTTPException(status_code=404, detail="Item not found")
 
     with tempfile.TemporaryDirectory() as file_dir:
         file_name = f"{file_dir}/sticker.tgs"
@@ -45,7 +48,10 @@ async def convert(file: UploadFile):
             with open(f"./stickers/{file_hash}.gif", "wb") as output:
                 output.write(buffer.read())
 
-            return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
+            if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
+                return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
+
+        raise HTTPException(status_code=404, detail="Item not found")
 
 
 @app.get("/{file_hash}")
