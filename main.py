@@ -57,7 +57,13 @@ async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = F
 
             client.containers.run(
                 "edasriyan/tgs-to-gif",
-                volumes={file_dir: {"bind": "/source", "mode": "rw"}}
+                volumes={file_dir: {"bind": "/source", "mode": "rw"}},
+                environment={
+                    "WIDTH": "256" if compress else "512",
+                    "HEIGHT": "256" if compress else "512",
+                    "FPS": "25" if compress else "50",
+                    "QUALITY": "45" if compress else "90"
+                }
             )
 
         with open(f"{file_dir}/sticker.tgs.gif", "rb") as buffer:
