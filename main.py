@@ -60,10 +60,10 @@ async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = F
                 "edasriyan/tgs-to-gif",
                 volumes={file_dir: {"bind": "/source", "mode": "rw"}},
                 environment={
-                    "WIDTH": "256" if compress else "512",
-                    "HEIGHT": "256" if compress else "512",
-                    "FPS": "25" if compress else "50",
-                    "QUALITY": "45" if compress else "90"
+                    "WIDTH": "128" if compress else "512",
+                    "HEIGHT": "128" if compress else "512",
+                    "FPS": "12" if compress else "50",
+                    "QUALITY": "22" if compress else "90"
                 }
             )
 
