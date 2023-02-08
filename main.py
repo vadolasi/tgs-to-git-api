@@ -3,7 +3,9 @@ import pathlib
 import tempfile
 
 import docker
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, Form, UploadFile, HTTPException
+from PIL import Image
+from io import BytesIO
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -23,7 +25,7 @@ pathlib.Path("./stickers").mkdir(parents=True, exist_ok=True)
 
 
 @app.post("/")
-async def convert(file: UploadFile):
+async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = Form(False)):
     content = await file.read()
     file_hash = hashlib.sha256(content).hexdigest()
 
@@ -34,7 +36,9 @@ async def convert(file: UploadFile):
         file_name = f"{file_dir}/sticker.tgs"
 
         with open(file_name, "wb") as buffer:
-            buffer.write(content)
+            io = BytesIO(content)
+            image = Image.open(io)
+            image.save(buffer, "tgs", optimize=True, quality=100 if compress else 50)
 
             client.containers.run(
                 "edasriyan/tgs-to-gif",

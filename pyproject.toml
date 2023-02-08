@@ -13,6 +13,7 @@ docker = "^6.0.1"
 uvicorn = {extras = ["standard"], version = "^0.20.0"}
 gunicorn = "^20.1.0"
 python-multipart = "^0.0.5"
+pillow = "^9.4.0"
 
 
 [tool.poetry.group.dev.dependencies]
