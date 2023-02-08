@@ -47,6 +47,7 @@ async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = F
         return Response(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
 
     content = await file.read()
+    print(content)
     file_hash = hashlib.sha256(content).hexdigest()
 
     with tempfile.TemporaryDirectory() as file_dir:
