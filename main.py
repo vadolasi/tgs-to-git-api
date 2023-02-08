@@ -28,10 +28,7 @@ async def convert(file: UploadFile):
     file_hash = hashlib.sha256(content).hexdigest()
 
     if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
-        if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
-            return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
-
-        raise HTTPException(status_code=404, detail="Item not found")
+        return FileResponse(f"./stickers/{file_hash}.gif", headers={"X-File-Hash": file_hash})
 
     with tempfile.TemporaryDirectory() as file_dir:
         file_name = f"{file_dir}/sticker.tgs"
@@ -56,4 +53,7 @@ async def convert(file: UploadFile):
 
 @app.get("/{file_hash}")
 async def get_sticker(file_hash: str):
-    return FileResponse(f"./stickers/{file_hash}.gif")
+    if pathlib.Path(f"./stickers/{file_hash}.gif").exists():
+        return FileResponse(f"./stickers/{file_hash}.gif")
+
+    raise HTTPException(status_code=404, detail="Item not found")
