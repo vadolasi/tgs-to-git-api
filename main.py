@@ -89,6 +89,6 @@ async def get_sticker(sticker_id: str):
     )
 
     if sticker:
-        return Stream(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
+        return Response(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
 
     raise HTTPException(status_code=404, detail="Item not found")
