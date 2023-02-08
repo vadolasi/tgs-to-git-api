@@ -5,7 +5,7 @@ import tempfile
 import docker
 from fastapi import FastAPI, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response
 from prisma import Prisma, Base64
 
 client = docker.from_env()
@@ -45,7 +45,7 @@ async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = F
     )
 
     if sticker:
-        return StreamingResponse(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
+        return Response(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
 
     content = await file.read()
     file_hash = hashlib.sha256(content).hexdigest()
@@ -77,7 +77,7 @@ async def convert(file: UploadFile, sticker_id: str = Form(), compress: bool = F
                 }
             )
 
-            return StreamingResponse(gif, headers={"X-File-Hash": file_hash}, media_type="image/gif")
+            return Response(gif, headers={"X-File-Hash": file_hash}, media_type="image/gif")
 
 
 @app.get("/{sticker_id}")
@@ -89,6 +89,6 @@ async def get_sticker(sticker_id: str):
     )
 
     if sticker:
-        return StreamingResponse(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
+        return Stream(Base64.decode(sticker.file), headers={"X-File-Hash": sticker.hash}, media_type="image/gif")
 
     raise HTTPException(status_code=404, detail="Item not found")
